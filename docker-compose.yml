@@ -1,0 +1,43 @@
+version: '3.7'
+
+volumes:
+  postgres_data:
+
+networks:
+  python_django_auth_jwt:
+    driver: bridge
+  
+services:
+
+  web:
+    build: ./
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./:/usr/src/
+    ports:
+      - ${PYTHON_PORT}:8000
+    env_file:
+      - ./.env
+    depends_on:
+      - python_django_auth_jwt_db
+    links:
+      - python_django_auth_jwt_db
+    networks:
+      - python_django_auth_jwt
+
+  python_django_auth_jwt_db:
+    image: postgres:13.0-alpine
+    restart: 'always'
+    container_name: python_django_auth_jwt_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: "${SQL_DATABASE}"
+      POSTGRES_USER: "${SQL_USER}"
+      POSTGRES_PASSWORD: "${SQL_PASSWORD}"
+    ports:
+      - "${SQL_PORT}:5432"
+    networks:
+      - python_django_auth_jwt
